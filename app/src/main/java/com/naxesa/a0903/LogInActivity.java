@@ -6,12 +6,21 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class LogInActivity extends AppCompatActivity {
 
     // View
     private EditText inputEmail, inputPassword;
     private Button btnLogIn, btnSignUp;
+
+    private JSONObject object;
+
+    private String id;
+    private String password;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,8 +37,35 @@ public class LogInActivity extends AppCompatActivity {
         btnLogIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                startActivity(intent);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean isSuccess = false;
+                        try {
+                            object = new JSONObject();
+                            object.put("Command", 112);
+                            object.put("Id", id);
+                            object.put("password", password);
+                            JSONObject result = Connect.postData(object);
+                            isSuccess = result.getBoolean("Command");
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        final boolean finalIsSuccess = isSuccess;
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(finalIsSuccess){
+                                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                    intent.putExtra("Id", id);
+                                    startActivity(intent);
+                                }else{
+                                    Toast.makeText(LogInActivity.this, "실패", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                    }
+                }).start();
             }
         });
     }
